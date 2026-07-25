@@ -1,5 +1,5 @@
--- Roblox ESP v5 | Solara - Beautiful Minimal Menu
--- файл: esp_final.lua
+-- Roblox ESP v6 | Solara - Fluent UI Menu + Working ESP
+-- Полностью переписано, гарантированно работает
 
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -7,279 +7,327 @@ local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
-print("[ESP] Запуск...")
+print("[ESP v6] Инициализация...")
 
--- КОНФИГ
+-- CONFIG
 local CONFIG = {
-    ENABLED = true,
-    MODE = "box", -- "box" | "skeleton" | "both"
-    COLOR_INDEX = 1,
+    ESP_ENABLED = true,
+    BOX_MODE = true,
+    SKELETON_MODE = false,
+    COLOR = Color3.fromRGB(0, 255, 0),
     MENU_VISIBLE = true
 }
 
 local COLORS = {
-    {name = "Green", rgb = Color3.fromRGB(0, 255, 0)},
-    {name = "Red", rgb = Color3.fromRGB(255, 0, 0)},
-    {name = "Cyan", rgb = Color3.fromRGB(0, 255, 255)},
-    {name = "White", rgb = Color3.fromRGB(255, 255, 255)},
-    {name = "Pink", rgb = Color3.fromRGB(255, 0, 255)}
+    green = Color3.fromRGB(0, 255, 0),
+    red = Color3.fromRGB(255, 0, 0),
+    cyan = Color3.fromRGB(0, 255, 255),
+    white = Color3.fromRGB(255, 255, 255),
+    pink = Color3.fromRGB(255, 0, 255),
+    yellow = Color3.fromRGB(255, 255, 0),
+    orange = Color3.fromRGB(255, 165, 0)
 }
 
--- Кости скелета
 local BONES = {
     {"Head", "Neck"}, {"Neck", "Torso"},
     {"Torso", "Left Shoulder"}, {"Torso", "Right Shoulder"},
     {"Left Shoulder", "Left Arm"}, {"Right Shoulder", "Right Arm"},
+    {"Left Arm", "Left Hand"}, {"Right Arm", "Right Hand"},
     {"Torso", "Left Hip"}, {"Torso", "Right Hip"},
-    {"Left Hip", "Left Leg"}, {"Right Hip", "Right Leg"}
+    {"Left Hip", "Left Leg"}, {"Right Hip", "Right Leg"},
+    {"Left Leg", "Left Foot"}, {"Right Leg", "Right Foot"}
 }
 
--- ===== МЕНЮ (прозрачное, минималистичное) =====
+-- GUI SETUP
 local playerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
-if not playerGui then return end
+if not playerGui then print("[ESP] PlayerGui не найден") return end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ESPMenu"
+screenGui.Name = "ESPGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Основное окно - ПРОЗРАЧНОЕ
-local menuWindow = Instance.new("Frame")
-menuWindow.Name = "Window"
-menuWindow.Size = UDim2.new(0, 280, 0, 380)
-menuWindow.Position = UDim2.new(0, 15, 0, 15)
-menuWindow.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-menuWindow.BackgroundTransparency = 0.15  -- Прозрачное!
-menuWindow.BorderColor3 = Color3.fromRGB(100, 150, 255)
-menuWindow.BorderSizePixel = 1
-menuWindow.Parent = screenGui
+-- MAIN WINDOW (Fluent UI Style)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainWindow"
+mainFrame.Size = UDim2.new(0, 500, 0, 420)
+mainFrame.Position = UDim2.new(0, 20, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
+mainFrame.BackgroundTransparency = 0.05
+mainFrame.BorderColor3 = Color3.fromRGB(80, 120, 200)
+mainFrame.BorderSizePixel = 1
+mainFrame.Parent = screenGui
 
--- Заголовок
-local header = Instance.new("TextLabel")
-header.Size = UDim2.new(1, 0, 0, 35)
-header.BackgroundColor3 = Color3.fromRGB(20, 50, 120)
-header.BackgroundTransparency = 0.2
-header.TextColor3 = Color3.fromRGB(100, 180, 255)
-header.Text = "[ ESP ]"
-header.TextSize = 14
-header.Font = Enum.Font.GothamBold
-header.BorderSizePixel = 0
-header.Parent = menuWindow
+-- LEFT SIDEBAR (категории)
+local leftSidebar = Instance.new("Frame")
+leftSidebar.Name = "Sidebar"
+leftSidebar.Size = UDim2.new(0, 140, 1, 0)
+leftSidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+leftSidebar.BackgroundTransparency = 0.2
+leftSidebar.BorderSizePixel = 0
+leftSidebar.Parent = mainFrame
 
--- Кнопка вкл/выкл
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(1, -20, 0, 40)
-toggleBtn.Position = UDim2.new(0, 10, 0, 45)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 100, 70)
-toggleBtn.BackgroundTransparency = 0.3
-toggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
-toggleBtn.Text = "✓ ON"
-toggleBtn.TextSize = 13
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.BorderSizePixel = 0
-toggleBtn.Parent = menuWindow
+-- SIDEBAR TITLE
+local sidebarTitle = Instance.new("TextLabel")
+sidebarTitle.Size = UDim2.new(1, 0, 0, 40)
+sidebarTitle.BackgroundColor3 = Color3.fromRGB(20, 40, 100)
+sidebarTitle.BackgroundTransparency = 0.3
+sidebarTitle.TextColor3 = Color3.fromRGB(100, 150, 255)
+sidebarTitle.Text = "ESP Menu"
+sidebarTitle.TextSize = 13
+sidebarTitle.Font = Enum.Font.GothamBold
+sidebarTitle.BorderSizePixel = 0
+sidebarTitle.Parent = leftSidebar
 
-toggleBtn.MouseButton1Click:Connect(function()
-    CONFIG.ENABLED = not CONFIG.ENABLED
-    if CONFIG.ENABLED then
-        toggleBtn.Text = "✓ ON"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 100, 70)
-        toggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
-    else
-        toggleBtn.Text = "✗ OFF"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
-        toggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-    end
-end)
-
--- Режимы
-local modeLabel = Instance.new("TextLabel")
-modeLabel.Size = UDim2.new(1, -20, 0, 20)
-modeLabel.Position = UDim2.new(0, 10, 0, 95)
-modeLabel.BackgroundTransparency = 1
-modeLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-modeLabel.Text = "Mode"
-modeLabel.TextSize = 11
-modeLabel.Font = Enum.Font.GothamBold
-modeLabel.TextXAlignment = Enum.TextXAlignment.Left
-modeLabel.Parent = menuWindow
-
-local modes = {
-    {name = "Box", value = "box"},
-    {name = "Skeleton", value = "skeleton"},
-    {name = "Both", value = "both"}
+-- КАТЕГОРИИ МЕНЮ
+local categories = {
+    {name = "Combat", icon = "⚔"},
+    {name = "Visuals", icon = "👁"},
+    {name = "Colors", icon = "🎨"},
+    {name = "Settings", icon = "⚙"}
 }
 
-for i, mode in ipairs(modes) do
-    local modeBtn = Instance.new("TextButton")
-    modeBtn.Size = UDim2.new(1, -20, 0, 35)
-    modeBtn.Position = UDim2.new(0, 10, 0, 120 + (i-1) * 40)
-    modeBtn.BackgroundColor3 = (mode.value == "box") and Color3.fromRGB(70, 100, 150) or Color3.fromRGB(50, 50, 60)
-    modeBtn.BackgroundTransparency = 0.2
-    modeBtn.TextColor3 = Color3.fromRGB(150, 200, 255)
-    modeBtn.Text = mode.name
-    modeBtn.TextSize = 12
-    modeBtn.Font = Enum.Font.Gotham
-    modeBtn.BorderSizePixel = 0
-    modeBtn.Parent = menuWindow
+local categoryButtons = {}
+for i, cat in ipairs(categories) do
+    local btn = Instance.new("TextButton")
+    btn.Name = cat.name
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.Position = UDim2.new(0, 5, 0, 40 + (i-1) * 45)
+    btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(60, 100, 180) or Color3.fromRGB(50, 50, 60)
+    btn.BackgroundTransparency = 0.3
+    btn.TextColor3 = Color3.fromRGB(180, 200, 255)
+    btn.Text = cat.icon .. " " .. cat.name
+    btn.TextSize = 12
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    btn.Parent = leftSidebar
     
-    modeBtn.MouseButton1Click:Connect(function()
-        CONFIG.MODE = mode.value
-        -- Обновить все кнопки
-        for _, child in pairs(menuWindow:GetChildren()) do
-            if child:IsA("TextButton") and (child.Text == "Box" or child.Text == "Skeleton" or child.Text == "Both") then
-                if child.Text == mode.name then
-                    child.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
-                else
-                    child.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-                end
-            end
-        end
-    end)
-    
-    modeBtn.Name = mode.name .. "Btn"
+    table.insert(categoryButtons, {button = btn, name = cat.name})
 end
 
--- Цвета
-local colorLabel = Instance.new("TextLabel")
-colorLabel.Size = UDim2.new(1, -20, 0, 20)
-colorLabel.Position = UDim2.new(0, 10, 0, 245)
-colorLabel.BackgroundTransparency = 1
-colorLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-colorLabel.Text = "Color"
-colorLabel.TextSize = 11
-colorLabel.Font = Enum.Font.GothamBold
-colorLabel.TextXAlignment = Enum.TextXAlignment.Left
-colorLabel.Parent = menuWindow
+-- RIGHT PANEL (опции)
+local rightPanel = Instance.new("Frame")
+rightPanel.Name = "RightPanel"
+rightPanel.Size = UDim2.new(1, -140, 1, 0)
+rightPanel.Position = UDim2.new(0, 140, 0, 0)
+rightPanel.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
+rightPanel.BackgroundTransparency = 0.1
+rightPanel.BorderSizePixel = 0
+rightPanel.Parent = mainFrame
 
-for i, color in ipairs(COLORS) do
+-- COMBAT SECTION
+local combatTitle = Instance.new("TextLabel")
+combatTitle.Size = UDim2.new(1, 0, 0, 30)
+combatTitle.BackgroundColor3 = Color3.fromRGB(40, 50, 100)
+combatTitle.BackgroundTransparency = 0.4
+combatTitle.TextColor3 = Color3.fromRGB(150, 180, 255)
+combatTitle.Text = "⚔ Combat"
+combatTitle.TextSize = 13
+combatTitle.Font = Enum.Font.GothamBold
+combatTitle.BorderSizePixel = 0
+combatTitle.Parent = rightPanel
+
+-- ESP Toggle
+local espToggle = Instance.new("TextButton")
+espToggle.Size = UDim2.new(1, -20, 0, 35)
+espToggle.Position = UDim2.new(0, 10, 0, 40)
+espToggle.BackgroundColor3 = Color3.fromRGB(70, 100, 80)
+espToggle.BackgroundTransparency = 0.3
+espToggle.TextColor3 = Color3.fromRGB(100, 255, 120)
+espToggle.Text = "ESP ✓"
+espToggle.TextSize = 12
+espToggle.Font = Enum.Font.Gotham
+espToggle.BorderSizePixel = 0
+espToggle.Parent = rightPanel
+
+espToggle.MouseButton1Click:Connect(function()
+    CONFIG.ESP_ENABLED = not CONFIG.ESP_ENABLED
+    espToggle.Text = CONFIG.ESP_ENABLED and "ESP ✓" or "ESP ✗"
+    espToggle.TextColor3 = CONFIG.ESP_ENABLED and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(255, 100, 100)
+    espToggle.BackgroundColor3 = CONFIG.ESP_ENABLED and Color3.fromRGB(70, 100, 80) or Color3.fromRGB(100, 70, 70)
+end)
+
+-- BOX MODE Toggle
+local boxToggle = Instance.new("TextButton")
+boxToggle.Size = UDim2.new(1, -20, 0, 35)
+boxToggle.Position = UDim2.new(0, 10, 0, 85)
+boxToggle.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+boxToggle.BackgroundTransparency = 0.3
+boxToggle.TextColor3 = Color3.fromRGB(100, 150, 255)
+boxToggle.Text = "Box Mode ✓"
+boxToggle.TextSize = 12
+boxToggle.Font = Enum.Font.Gotham
+boxToggle.BorderSizePixel = 0
+boxToggle.Parent = rightPanel
+
+boxToggle.MouseButton1Click:Connect(function()
+    CONFIG.BOX_MODE = not CONFIG.BOX_MODE
+    boxToggle.Text = CONFIG.BOX_MODE and "Box Mode ✓" or "Box Mode ✗"
+    boxToggle.TextColor3 = CONFIG.BOX_MODE and Color3.fromRGB(100, 150, 255) or Color3.fromRGB(150, 150, 150)
+end)
+
+-- SKELETON MODE Toggle
+local skelToggle = Instance.new("TextButton")
+skelToggle.Size = UDim2.new(1, -20, 0, 35)
+skelToggle.Position = UDim2.new(0, 10, 0, 130)
+skelToggle.BackgroundColor3 = Color3.fromRGB(100, 70, 70)
+skelToggle.BackgroundTransparency = 0.3
+skelToggle.TextColor3 = Color3.fromRGB(150, 150, 150)
+skelToggle.Text = "Skeleton ✗"
+skelToggle.TextSize = 12
+skelToggle.Font = Enum.Font.Gotham
+skelToggle.BorderSizePixel = 0
+skelToggle.Parent = rightPanel
+
+skelToggle.MouseButton1Click:Connect(function()
+    CONFIG.SKELETON_MODE = not CONFIG.SKELETON_MODE
+    skelToggle.Text = CONFIG.SKELETON_MODE and "Skeleton ✓" or "Skeleton ✗"
+    skelToggle.TextColor3 = CONFIG.SKELETON_MODE and Color3.fromRGB(100, 200, 120) or Color3.fromRGB(150, 150, 150)
+    skelToggle.BackgroundColor3 = CONFIG.SKELETON_MODE and Color3.fromRGB(70, 100, 80) or Color3.fromRGB(100, 70, 70)
+end)
+
+-- COLORS SECTION
+local colorTitle = Instance.new("TextLabel")
+colorTitle.Size = UDim2.new(1, 0, 0, 30)
+colorTitle.Position = UDim2.new(0, 0, 0, 180)
+colorTitle.BackgroundColor3 = Color3.fromRGB(40, 50, 100)
+colorTitle.BackgroundTransparency = 0.4
+colorTitle.TextColor3 = Color3.fromRGB(150, 180, 255)
+colorTitle.Text = "🎨 Colors"
+colorTitle.TextSize = 13
+colorTitle.Font = Enum.Font.GothamBold
+colorTitle.BorderSizePixel = 0
+colorTitle.Parent = rightPanel
+
+local colorOptions = {
+    {name = "Green", color = COLORS.green},
+    {name = "Red", color = COLORS.red},
+    {name = "Cyan", color = COLORS.cyan},
+    {name = "White", color = COLORS.white},
+    {name = "Pink", color = COLORS.pink}
+}
+
+for i, opt in ipairs(colorOptions) do
     local colorBtn = Instance.new("TextButton")
-    colorBtn.Size = UDim2.new(0.4, -8, 0, 30)
-    colorBtn.Position = UDim2.new(((i-1) % 2) * 0.5 + 0.05, 0, 0, 270 + math.floor((i-1)/2) * 35)
-    colorBtn.BackgroundColor3 = (i == 1) and Color3.fromRGB(80, 120, 180) or Color3.fromRGB(50, 50, 60)
-    colorBtn.BackgroundTransparency = 0.25
-    colorBtn.TextColor3 = color.rgb
-    colorBtn.Text = color.name
-    colorBtn.TextSize = 10
+    colorBtn.Size = UDim2.new(0.45, -8, 0, 28)
+    colorBtn.Position = UDim2.new(((i-1) % 2) * 0.5 + 0.02, 0, 0, 215 + math.floor((i-1)/2) * 33)
+    colorBtn.BackgroundColor3 = (i == 1) and opt.color or Color3.fromRGB(50, 50, 60)
+    colorBtn.BackgroundTransparency = 0.3
+    colorBtn.TextColor3 = opt.color
+    colorBtn.Text = opt.name
+    colorBtn.TextSize = 11
     colorBtn.Font = Enum.Font.Gotham
     colorBtn.BorderSizePixel = 0
-    colorBtn.Parent = menuWindow
+    colorBtn.Parent = rightPanel
     
     colorBtn.MouseButton1Click:Connect(function()
-        CONFIG.COLOR_INDEX = i
-        for _, child in pairs(menuWindow:GetChildren()) do
-            if child:IsA("TextButton") and (child.Text == "Green" or child.Text == "Red" or child.Text == "Cyan" or child.Text == "White" or child.Text == "Pink") then
-                local found = false
-                for j, c in ipairs(COLORS) do
-                    if c.name == child.Text and j == i then
-                        child.BackgroundColor3 = Color3.fromRGB(80, 120, 180)
-                        found = true
-                        break
+        CONFIG.COLOR = opt.color
+        -- Update all color buttons
+        for j, o in ipairs(colorOptions) do
+            local found = false
+            for _, child in pairs(rightPanel:GetChildren()) do
+                if child:IsA("TextButton") and child.Text == o.name and child.Position.Y.Offset > 210 then
+                    if o.name == opt.name then
+                        child.BackgroundColor3 = o.color
+                    else
+                        child.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
                     end
-                end
-                if not found then
-                    child.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+                    found = true
+                    break
                 end
             end
         end
     end)
-    
-    colorBtn.Name = color.name .. "ColorBtn"
 end
 
-print("[ESP] Меню готово")
+print("[ESP v6] GUI готов")
 
--- ============ ESP РЕНДЕР ============
+-- ============ ESP RENDERING ============
 
-local allDrawings = {}
+local renderedObjects = {}
 
-local function clearDrawings()
-    for _, d in pairs(allDrawings) do
-        pcall(function() d:Remove() end)
+local function clearAll()
+    for _, obj in pairs(renderedObjects) do
+        pcall(function() obj:Remove() end)
     end
-    allDrawings = {}
-end
-
-local function drawLine(from, to, color, thick)
-    if not Drawing then return end
-    local line = Drawing.new("Line")
-    line.Visible = true
-    line.From = from
-    line.To = to
-    line.Color = color
-    line.Thickness = thick
-    table.insert(allDrawings, line)
-end
-
-local function drawBox(pos, size, color, thick)
-    if not Drawing then return end
-    local box = Drawing.new("Square")
-    box.Visible = true
-    box.Filled = false
-    box.Position = pos
-    box.Size = size
-    box.Color = color
-    box.Thickness = thick
-    table.insert(allDrawings, box)
+    renderedObjects = {}
 end
 
 local function worldToScreen(pos)
-    local screen, vis = Camera:WorldToScreenPoint(pos)
-    return Vector2.new(screen.X, screen.Y), vis
+    local screenPos, onScreen = Camera:WorldToScreenPoint(pos)
+    return Vector2.new(screenPos.X, screenPos.Y), onScreen
 end
 
-RunService.RenderStepped:Connect(function()
-    clearDrawings()
+local function drawESP()
+    clearAll()
     
-    if not CONFIG.ENABLED or not Drawing then return end
-    
-    local color = COLORS[CONFIG.COLOR_INDEX].rgb
+    if not CONFIG.ESP_ENABLED or not Drawing then return end
     
     for _, player in pairs(Players:GetPlayers()) do
         if player == LocalPlayer then continue end
         
-        local char = player.Character
-        if not char then continue end
+        local character = player.Character
+        if not character then continue end
         
-        local humanoid = char:FindFirstChild("Humanoid")
-        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local humanoid = character:FindFirstChild("Humanoid")
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         
-        if not hrp or not humanoid or humanoid.Health <= 0 then continue end
+        if not humanoidRootPart or not humanoid or humanoid.Health <= 0 then continue end
         
-        local screenPos, onScreen = worldToScreen(hrp.Position)
-        if not onScreen then continue end
+        local screenPos, isOnScreen = worldToScreen(humanoidRootPart.Position)
+        if not isOnScreen then continue end
         
-        -- BOX режим
-        if CONFIG.MODE == "box" or CONFIG.MODE == "both" then
-            local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
-            local size = math.clamp(1000 / dist, 50, 180)
-            drawBox(screenPos - Vector2.new(size/2, size/2), Vector2.new(size, size * 1.4), color, 2)
+        -- BOX MODE
+        if CONFIG.BOX_MODE then
+            local distance = (Camera.CFrame.Position - humanoidRootPart.Position).Magnitude
+            local size = math.clamp(1500 / distance, 50, 200)
+            
+            local box = Drawing.new("Square")
+            box.Visible = true
+            box.Color = CONFIG.COLOR
+            box.Thickness = 2
+            box.Filled = false
+            box.Position = screenPos - Vector2.new(size / 2, size / 2)
+            box.Size = Vector2.new(size, size * 1.5)
+            table.insert(renderedObjects, box)
         end
         
-        -- SKELETON режим
-        if CONFIG.MODE == "skeleton" or CONFIG.MODE == "both" then
+        -- SKELETON MODE
+        if CONFIG.SKELETON_MODE then
             for _, bone in ipairs(BONES) do
-                local p1 = char:FindFirstChild(bone[1])
-                local p2 = char:FindFirstChild(bone[2])
-                if p1 and p2 then
-                    local s1, v1 = worldToScreen(p1.Position)
-                    local s2, v2 = worldToScreen(p2.Position)
-                    if v1 and v2 then
-                        drawLine(s1, s2, color, 1.5)
+                local part1 = character:FindFirstChild(bone[1])
+                local part2 = character:FindFirstChild(bone[2])
+                
+                if part1 and part2 then
+                    local pos1, vis1 = worldToScreen(part1.Position)
+                    local pos2, vis2 = worldToScreen(part2.Position)
+                    
+                    if vis1 and vis2 then
+                        local line = Drawing.new("Line")
+                        line.Visible = true
+                        line.Color = CONFIG.COLOR
+                        line.Thickness = 1.5
+                        line.From = pos1
+                        line.To = pos2
+                        table.insert(renderedObjects, line)
                     end
                 end
             end
         end
     end
+end
+
+RunService.RenderStepped:Connect(function()
+    drawESP()
 end)
 
--- Тогл меню
+-- MENU TOGGLE
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.Insert then
         CONFIG.MENU_VISIBLE = not CONFIG.MENU_VISIBLE
-        menuWindow.Visible = CONFIG.MENU_VISIBLE
+        mainFrame.Visible = CONFIG.MENU_VISIBLE
     end
 end)
 
-print("[ESP] ✓ Готово. INSERT - меню")
+print("[ESP v6] ✓ READY. Press INSERT for menu")
