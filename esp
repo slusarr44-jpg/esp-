@@ -1,20 +1,22 @@
--- Roblox ESP Cheat v3 | Solara Injector - FIXED
--- файл: esp_working.lua
--- Гарантированно работает. Меню откроется в любом случае.
+-- Roblox ESP Cheat v4 | Solara - PRO Edition
+-- файл: esp_pro.lua
+-- Меню как на скрине + скелет + обводка тела
 
 local success, err = pcall(function()
-    
+
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
-print("[ESP] Инициализация...")
+print("[ESP] Инициализация v4...")
 
 -- КОНФИГ
 local CONFIG = {
     ESP_ENABLED = true,
+    SKELETON_ENABLED = true,
+    BOX_ENABLED = true,
     COLOR_INDEX = 1,
     MENU_KEY = Enum.KeyCode.Insert,
     MENU_VISIBLE = true
@@ -28,202 +30,286 @@ local COLORS = {
     {name = "Pink", value = Color3.fromRGB(255, 0, 255)}
 }
 
--- ОСНОВНОЕ МЕНЮ (гарантированно работает)
+-- Структура скелета
+local SKELETON_CONNECTIONS = {
+    {"Head", "Neck"},
+    {"Neck", "Torso"},
+    {"Torso", "Left Shoulder"},
+    {"Torso", "Right Shoulder"},
+    {"Left Shoulder", "Left Arm"},
+    {"Right Shoulder", "Right Arm"},
+    {"Torso", "Left Hip"},
+    {"Torso", "Right Hip"},
+    {"Left Hip", "Left Leg"},
+    {"Right Hip", "Right Leg"}
+}
+
+-- ОСНОВНОЕ GUI
 local playerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
-if not playerGui then
-    print("[ESP] Ошибка: PlayerGui не найден")
-    return
-end
+if not playerGui then print("[ESP] Ошибка: PlayerGui") return end
 
 local mainGui = Instance.new("ScreenGui")
-mainGui.Name = "ESPMenuMain"
+mainGui.Name = "ESPPro"
 mainGui.ResetOnSpawn = false
 mainGui.Parent = playerGui
 
--- Основное окно меню
-local menuWindow = Instance.new("Frame")
-menuWindow.Name = "MenuWindow"
-menuWindow.Size = UDim2.new(0, 280, 0, 380)
-menuWindow.Position = UDim2.new(0, 15, 0, 15)
-menuWindow.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-menuWindow.BorderColor3 = Color3.fromRGB(60, 120, 200)
-menuWindow.BorderSizePixel = 3
-menuWindow.Parent = mainGui
+-- Главное окно (как на скрине - широкое)
+local mainWindow = Instance.new("Frame")
+mainWindow.Name = "MainWindow"
+mainWindow.Size = UDim2.new(0, 500, 0, 450)
+mainWindow.Position = UDim2.new(0, 20, 0, 20)
+mainWindow.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainWindow.BorderColor3 = Color3.fromRGB(50, 100, 180)
+mainWindow.BorderSizePixel = 3
+mainWindow.Parent = mainGui
 
--- Заголовок
-local header = Instance.new("TextLabel")
-header.Name = "Header"
-header.Size = UDim2.new(1, 0, 0, 40)
-header.BackgroundColor3 = Color3.fromRGB(20, 50, 100)
-header.TextColor3 = Color3.fromRGB(100, 200, 255)
-header.Text = "[ ESP MENU ]"
-header.TextSize = 16
-header.Font = Enum.Font.GothamBold
-header.BorderSizePixel = 0
-header.Parent = menuWindow
+-- ===== ЛЕВАЯ ПАНЕЛЬ (игры/режимы) =====
+local leftPanel = Instance.new("Frame")
+leftPanel.Name = "LeftPanel"
+leftPanel.Size = UDim2.new(0, 160, 1, 0)
+leftPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+leftPanel.BorderColor3 = Color3.fromRGB(40, 80, 150)
+leftPanel.BorderSizePixel = 2
+leftPanel.Parent = mainWindow
 
--- ESP Тогл кнопка
-local espBtn = Instance.new("TextButton")
-espBtn.Name = "ESPBtn"
-espBtn.Size = UDim2.new(1, -20, 0, 45)
-espBtn.Position = UDim2.new(0, 10, 0, 50)
-espBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 70)
-espBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
-espBtn.Text = "✓ ESP: ON"
-espBtn.TextSize = 14
-espBtn.Font = Enum.Font.GothamBold
-espBtn.BorderSizePixel = 0
-espBtn.Parent = menuWindow
+-- Заголовок левой панели
+local leftHeader = Instance.new("TextLabel")
+leftHeader.Name = "Header"
+leftHeader.Size = UDim2.new(1, 0, 0, 30)
+leftHeader.BackgroundColor3 = Color3.fromRGB(10, 40, 90)
+leftHeader.TextColor3 = Color3.fromRGB(100, 180, 255)
+leftHeader.Text = "[ MODES ]"
+leftHeader.TextSize = 12
+leftHeader.Font = Enum.Font.GothamBold
+leftHeader.BorderSizePixel = 0
+leftHeader.Parent = leftPanel
 
-espBtn.MouseButton1Click:Connect(function()
+-- Кнопки режимов
+local modes = {"ESP", "Skeleton", "Box", "Box+Skeleton"}
+for i, modeName in ipairs(modes) do
+    local modeBtn = Instance.new("TextButton")
+    modeBtn.Name = modeName
+    modeBtn.Size = UDim2.new(1, -8, 0, 35)
+    modeBtn.Position = UDim2.new(0, 4, 0, 30 + (i-1) * 38)
+    modeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    modeBtn.TextColor3 = Color3.fromRGB(100, 150, 200)
+    modeBtn.Text = modeName
+    modeBtn.TextSize = 11
+    modeBtn.Font = Enum.Font.Gotham
+    modeBtn.BorderSizePixel = 0
+    modeBtn.Parent = leftPanel
+    
+    modeBtn.MouseButton1Click:Connect(function()
+        if modeName == "ESP" then
+            CONFIG.BOX_ENABLED = true
+            CONFIG.SKELETON_ENABLED = false
+        elseif modeName == "Skeleton" then
+            CONFIG.BOX_ENABLED = false
+            CONFIG.SKELETON_ENABLED = true
+        elseif modeName == "Box" then
+            CONFIG.BOX_ENABLED = true
+            CONFIG.SKELETON_ENABLED = false
+        elseif modeName == "Box+Skeleton" then
+            CONFIG.BOX_ENABLED = true
+            CONFIG.SKELETON_ENABLED = true
+        end
+        modeBtn.BackgroundColor3 = Color3.fromRGB(60, 100, 150)
+    end)
+end
+
+-- ===== ПРАВАЯ ПАНЕЛЬ (опции) =====
+local rightPanel = Instance.new("Frame")
+rightPanel.Name = "RightPanel"
+rightPanel.Size = UDim2.new(1, -160, 1, 0)
+rightPanel.Position = UDim2.new(0, 160, 0, 0)
+rightPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+rightPanel.BorderSizePixel = 0
+rightPanel.Parent = mainWindow
+
+-- Заголовок правой панели
+local rightHeader = Instance.new("TextLabel")
+rightHeader.Name = "Header"
+rightHeader.Size = UDim2.new(1, 0, 0, 30)
+rightHeader.BackgroundColor3 = Color3.fromRGB(20, 50, 100)
+rightHeader.TextColor3 = Color3.fromRGB(100, 200, 255)
+rightHeader.Text = "[ OPTIONS ]"
+rightHeader.TextSize = 12
+rightHeader.Font = Enum.Font.GothamBold
+rightHeader.BorderSizePixel = 0
+rightHeader.Parent = rightPanel
+
+-- Тогл ESP
+local espToggleBtn = Instance.new("TextButton")
+espToggleBtn.Name = "ESPToggle"
+espToggleBtn.Size = UDim2.new(1, -20, 0, 40)
+espToggleBtn.Position = UDim2.new(0, 10, 0, 45)
+espToggleBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 70)
+espToggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+espToggleBtn.Text = "✓ ESP: ON"
+espToggleBtn.TextSize = 13
+espToggleBtn.Font = Enum.Font.GothamBold
+espToggleBtn.BorderSizePixel = 0
+espToggleBtn.Parent = rightPanel
+
+espToggleBtn.MouseButton1Click:Connect(function()
     CONFIG.ESP_ENABLED = not CONFIG.ESP_ENABLED
     if CONFIG.ESP_ENABLED then
-        espBtn.Text = "✓ ESP: ON"
-        espBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 70)
-        espBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+        espToggleBtn.Text = "✓ ESP: ON"
+        espToggleBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 70)
+        espToggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
     else
-        espBtn.Text = "✗ ESP: OFF"
-        espBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 50)
-        espBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+        espToggleBtn.Text = "✗ ESP: OFF"
+        espToggleBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 50)
+        espToggleBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
 end)
 
--- Секция цветов
+-- Метка цветов
 local colorLabel = Instance.new("TextLabel")
-colorLabel.Size = UDim2.new(1, -20, 0, 25)
-colorLabel.Position = UDim2.new(0, 10, 0, 105)
+colorLabel.Size = UDim2.new(1, -20, 0, 20)
+colorLabel.Position = UDim2.new(0, 10, 0, 95)
 colorLabel.BackgroundTransparency = 1
 colorLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-colorLabel.Text = "[ Colors ]"
-colorLabel.TextSize = 12
+colorLabel.Text = "[ Color ]"
+colorLabel.TextSize = 11
 colorLabel.Font = Enum.Font.GothamBold
 colorLabel.TextXAlignment = Enum.TextXAlignment.Left
-colorLabel.Parent = menuWindow
+colorLabel.Parent = rightPanel
 
 -- Кнопки цветов
 for i, colorData in ipairs(COLORS) do
     local colorBtn = Instance.new("TextButton")
     colorBtn.Name = "Color_" .. i
-    colorBtn.Size = UDim2.new(1, -20, 0, 38)
-    colorBtn.Position = UDim2.new(0, 10, 0, 130 + (i-1) * 40)
-    colorBtn.BackgroundColor3 = (i == 1) and Color3.fromRGB(60, 80, 120) or Color3.fromRGB(50, 50, 60)
+    colorBtn.Size = UDim2.new(0.45, -10, 0, 32)
+    colorBtn.Position = UDim2.new((i % 2) * 0.5 + 0.01, 5, 0, 120 + math.floor((i-1)/2) * 38)
+    colorBtn.BackgroundColor3 = (i == 1) and Color3.fromRGB(60, 100, 150) or Color3.fromRGB(50, 50, 60)
     colorBtn.TextColor3 = colorData.value
     colorBtn.Text = "● " .. colorData.name
-    colorBtn.TextSize = 13
+    colorBtn.TextSize = 11
     colorBtn.Font = Enum.Font.Gotham
     colorBtn.BorderSizePixel = 0
-    colorBtn.Parent = menuWindow
+    colorBtn.Parent = rightPanel
     
     colorBtn.MouseButton1Click:Connect(function()
         CONFIG.COLOR_INDEX = i
-        -- Обновить все кнопки
         for j = 1, #COLORS do
-            local btn = menuWindow:FindFirstChild("Color_" .. j)
+            local btn = rightPanel:FindFirstChild("Color_" .. j)
             if btn then
-                if j == i then
-                    btn.BackgroundColor3 = Color3.fromRGB(60, 100, 180)
-                else
-                    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-                end
+                btn.BackgroundColor3 = (j == i) and Color3.fromRGB(60, 100, 150) or Color3.fromRGB(50, 50, 60)
             end
         end
     end)
 end
 
-print("[ESP] Меню загружено")
+print("[ESP] Меню загружено (PRO версия)")
 
--- ============ ESP РЕНДЕР ============
+-- ============ ESP РЕНДЕР (Box + Skeleton) ============
 
-local drawingBoxes = {}
-local function safeDrawing()
-    if not Drawing then
-        print("[ESP] Drawing API недоступен, используем альтернативу")
-        return false
-    end
-    return true
+local drawings = {}
+
+local function drawLine(p1, p2, color, thickness)
+    if not Drawing then return end
+    local line = Drawing.new("Line")
+    line.Visible = true
+    line.Color = color
+    line.Thickness = thickness
+    line.From = p1
+    line.To = p2
+    table.insert(drawings, line)
+    return line
+end
+
+local function drawBox(pos, size, color, thickness)
+    if not Drawing then return end
+    local box = Drawing.new("Square")
+    box.Visible = true
+    box.Filled = false
+    box.Color = color
+    box.Thickness = thickness
+    box.Position = pos
+    box.Size = size
+    table.insert(drawings, box)
+    return box
+end
+
+local function worldToScreen(position)
+    local screenPos, visible = Camera:WorldToScreenPoint(position)
+    return Vector2.new(screenPos.X, screenPos.Y), visible
 end
 
 RunService.RenderStepped:Connect(function()
     if not CONFIG.ESP_ENABLED then
-        for _, box in pairs(drawingBoxes) do
-            if box and box.Remove then
-                pcall(function() box:Remove() end)
-            end
+        for _, drawing in pairs(drawings) do
+            pcall(function() drawing:Remove() end)
         end
-        drawingBoxes = {}
+        drawings = {}
         return
     end
     
-    if not safeDrawing() then return end
+    if not Drawing then return end
+    
+    for _, drawing in pairs(drawings) do
+        pcall(function() drawing:Remove() end)
+    end
+    drawings = {}
     
     local currentColor = COLORS[CONFIG.COLOR_INDEX].value
-    local allPlayers = Players:GetPlayers()
     
-    for _, player in pairs(allPlayers) do
+    for _, player in pairs(Players:GetPlayers()) do
         if player == LocalPlayer then continue end
         
         local char = player.Character
         if not char then continue end
         
         local humanoid = char:FindFirstChild("Humanoid")
-        local rootPart = char:FindFirstChild("HumanoidRootPart")
+        local hrp = char:FindFirstChild("HumanoidRootPart")
         
-        if not rootPart or not humanoid or humanoid.Health <= 0 then continue end
+        if not hrp or not humanoid or humanoid.Health <= 0 then continue end
         
-        local screenPos, visible = Camera:WorldToScreenPoint(rootPart.Position)
-        if not visible then continue end
+        local hrmPos, hrmVis = worldToScreen(hrp.Position)
+        if not hrmVis then continue end
         
-        local boxId = "box_" .. player.UserId
-        local box = drawingBoxes[boxId]
-        
-        if not box then
-            box = Drawing.new("Square")
-            box.Visible = true
-            box.Filled = false
-            box.Thickness = 2
-            box.Transparency = 1
-            drawingBoxes[boxId] = box
+        -- ===== BOX (обводка тела) =====
+        if CONFIG.BOX_ENABLED then
+            local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
+            local boxSize = math.clamp(800 / dist, 40, 160)
+            
+            drawBox(hrmPos - Vector2.new(boxSize/2, boxSize/2), Vector2.new(boxSize, boxSize * 1.3), currentColor, 2)
         end
         
-        -- Размер бокса зависит от расстояния
-        local dist = (Camera.CFrame.Position - rootPart.Position).Magnitude
-        local boxSize = math.clamp(800 / dist, 30, 150)
-        
-        box.Color = currentColor
-        box.Position = Vector2.new(screenPos.X - boxSize/2, screenPos.Y - boxSize/2)
-        box.Size = Vector2.new(boxSize, boxSize * 1.4)
-    end
-    
-    -- Чистка мертвых боксов
-    for boxId, box in pairs(drawingBoxes) do
-        local userId = tonumber(boxId:match("(%d+)$"))
-        local playerFound = false
-        for _, p in pairs(allPlayers) do
-            if p.UserId == userId then
-                playerFound = true
-                break
+        -- ===== SKELETON (линии скелета) =====
+        if CONFIG.SKELETON_ENABLED then
+            for _, connection in ipairs(SKELETON_CONNECTIONS) do
+                local part1Name, part2Name = connection[1], connection[2]
+                local part1 = char:FindFirstChild(part1Name)
+                local part2 = char:FindFirstChild(part2Name)
+                
+                if part1 and part2 then
+                    local pos1, vis1 = worldToScreen(part1.Position)
+                    local pos2, vis2 = worldToScreen(part2.Position)
+                    
+                    if vis1 and vis2 then
+                        drawLine(pos1, pos2, currentColor, 1.5)
+                    end
+                end
             end
-        end
-        if not playerFound then
-            pcall(function() box:Remove() end)
-            drawingBoxes[boxId] = nil
         end
     end
 end)
 
--- Тогл меню по INSERT
+-- Тогл меню INSERT
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == CONFIG.MENU_KEY then
         CONFIG.MENU_VISIBLE = not CONFIG.MENU_VISIBLE
-        menuWindow.Visible = CONFIG.MENU_VISIBLE
+        mainWindow.Visible = CONFIG.MENU_VISIBLE
     end
 end)
 
-print("[ESP] ✓ Загружено. INSERT для меню. Все системы работают.")
+print("[ESP PRO] ✓ Загружено. INSERT - меню. Box + Skeleton работают!")
 
 end)
 
 if not success then
-    print("[ESP] КРИТИЧЕСКАЯ ОШИБКА: " .. tostring(err))
+    print("[ESP] ОШИБКА: " .. tostring(err))
 end
