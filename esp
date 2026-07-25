@@ -1,6 +1,6 @@
--- Roblox ESP Cheat with Color Selection
--- injector: Synapse X / KRNL
--- файл: esp_cheat.lua
+-- Roblox ESP Cheat v2 | Solara Injector
+-- файл: esp_solara.lua
+-- env: game должен быть загруженным Roblox, Solara injector ready
 
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -10,10 +10,11 @@ local Camera = workspace.CurrentCamera
 -- CONFIG
 local CONFIG = {
     ESP_ENABLED = true,
-    ESP_COLOR_INDEX = 1, -- 1=зелёный, 2=красный, 3=чёрный, 4=белый, 5=розовый
+    ESP_COLOR_INDEX = 1,
     ESP_THICKNESS = 2,
     MENU_KEY = Enum.KeyCode.Insert,
-    MENU_VISIBLE = true
+    MENU_VISIBLE = true,
+    BOX_SIZE = 50
 }
 
 local COLORS = {
@@ -21,127 +22,137 @@ local COLORS = {
     {name = "Red", rgb = Color3.fromRGB(255, 0, 0)},
     {name = "Black", rgb = Color3.fromRGB(0, 0, 0)},
     {name = "White", rgb = Color3.fromRGB(255, 255, 255)},
-    {name = "Pink", rgb = Color3.fromRGB(255, 0, 255)}
+    {name = "Cyan", rgb = Color3.fromRGB(0, 255, 255)}
 }
 
--- Create Main GUI
+-- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CheatMenu"
+screenGui.Name = "SolaraESPMenu"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.ScreenInsets = Enum.ScreenInsets.DeviceAndAppSafeInsets
 
--- Menu Background
-local menuFrame = Instance.new("Frame")
-menuFrame.Name = "MenuFrame"
-menuFrame.Size = UDim2.new(0, 280, 0, 500)
-menuFrame.Position = UDim2.new(0, 20, 0, 20)
-menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-menuFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-menuFrame.BorderSizePixel = 1
-menuFrame.Parent = screenGui
-
--- Title
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "Title"
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
-titleLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "Ink Game Cheat"
-titleLabel.TextSize = 16
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Parent = menuFrame
-
--- Combat Section
-local combatLabel = Instance.new("TextLabel")
-combatLabel.Size = UDim2.new(1, 0, 0, 25)
-combatLabel.Position = UDim2.new(0, 0, 0, 35)
-combatLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-combatLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-combatLabel.Text = "Combat"
-combatLabel.TextSize = 12
-combatLabel.Font = Enum.Font.GothamBold
-combatLabel.Parent = menuFrame
-
--- ESP Toggle
-local espButton = Instance.new("TextButton")
-espButton.Name = "ESPToggle"
-espButton.Size = UDim2.new(1, -10, 0, 25)
-espButton.Position = UDim2.new(0, 5, 0, 65)
-espButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-espButton.TextColor3 = Color3.fromRGB(0, 255, 0)
-espButton.Text = "ESP: ON"
-espButton.TextSize = 12
-espButton.Font = Enum.Font.Gotham
-espButton.Parent = menuFrame
-
-espButton.MouseButton1Click:Connect(function()
-    CONFIG.ESP_ENABLED = not CONFIG.ESP_ENABLED
-    espButton.Text = CONFIG.ESP_ENABLED and "ESP: ON" or "ESP: OFF"
-    espButton.TextColor3 = CONFIG.ESP_ENABLED and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+pcall(function()
+    screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 end)
 
--- Visuals Section
-local visualsLabel = Instance.new("TextLabel")
-visualsLabel.Size = UDim2.new(1, 0, 0, 25)
-visualsLabel.Position = UDim2.new(0, 0, 0, 100)
-visualsLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-visualsLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-visualsLabel.Text = "Visuals"
-visualsLabel.TextSize = 12
-visualsLabel.Font = Enum.Font.GothamBold
-visualsLabel.Parent = menuFrame
+-- Main Menu Frame
+local menuFrame = Instance.new("Frame")
+menuFrame.Name = "MenuFrame"
+menuFrame.Size = UDim2.new(0, 300, 0, 400)
+menuFrame.Position = UDim2.new(0, 20, 0, 20)
+menuFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+menuFrame.BorderColor3 = Color3.fromRGB(100, 100, 120)
+menuFrame.BorderSizePixel = 2
+menuFrame.ClipsDescendants = true
+menuFrame.Parent = screenGui
 
--- Color Selection Buttons
-local colorButtonPositions = {
-    {pos = 130, name = "Green"},
-    {pos = 160, name = "Red"},
-    {pos = 190, name = "Black"},
-    {pos = 220, name = "White"},
-    {pos = 250, name = "Pink"}
-}
+-- Corner radius effect (usando UICorner)
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = menuFrame
 
-for i, colorData in ipairs(colorButtonPositions) do
-    local colorButton = Instance.new("TextButton")
-    colorButton.Name = "Color_" .. colorData.name
-    colorButton.Size = UDim2.new(1, -10, 0, 25)
-    colorButton.Position = UDim2.new(0, 5, 0, colorData.pos)
-    colorButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    colorButton.TextColor3 = COLORS[i].rgb
-    colorButton.Text = "Color: " .. COLORS[i].name
-    colorButton.TextSize = 11
-    colorButton.Font = Enum.Font.Gotham
-    colorButton.Parent = menuFrame
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = menuFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, -10, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+titleLabel.Text = "ESP Menu"
+titleLabel.TextSize = 16
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+-- Scrollable content
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Name = "ScrollContent"
+scrollFrame.Size = UDim2.new(1, 0, 1, -35)
+scrollFrame.Position = UDim2.new(0, 0, 0, 35)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 6
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
+scrollFrame.Parent = menuFrame
+
+-- ESP Toggle Section
+local espToggle = Instance.new("TextButton")
+espToggle.Name = "ESPToggle"
+espToggle.Size = UDim2.new(1, -20, 0, 40)
+espToggle.Position = UDim2.new(0, 10, 0, 10)
+espToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+espToggle.TextColor3 = Color3.fromRGB(0, 255, 100)
+espToggle.Text = "✓ ESP: ON"
+espToggle.TextSize = 13
+espToggle.Font = Enum.Font.Gotham
+espToggle.BorderSizePixel = 0
+espToggle.Parent = scrollFrame
+
+local espCorner = Instance.new("UICorner")
+espCorner.CornerRadius = UDim.new(0, 5)
+espCorner.Parent = espToggle
+
+espToggle.MouseButton1Click:Connect(function()
+    CONFIG.ESP_ENABLED = not CONFIG.ESP_ENABLED
+    espToggle.Text = CONFIG.ESP_ENABLED and "✓ ESP: ON" or "✗ ESP: OFF"
+    espToggle.TextColor3 = CONFIG.ESP_ENABLED and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
+    espToggle.BackgroundColor3 = CONFIG.ESP_ENABLED and Color3.fromRGB(70, 100, 70) or Color3.fromRGB(100, 50, 50)
+end)
+
+-- Color Selection Section
+local colorLabelY = 60
+local colorLabel = Instance.new("TextLabel")
+colorLabel.Name = "ColorLabel"
+colorLabel.Size = UDim2.new(1, -20, 0, 20)
+colorLabel.Position = UDim2.new(0, 10, 0, colorLabelY)
+colorLabel.BackgroundTransparency = 1
+colorLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
+colorLabel.Text = "ESP Color"
+colorLabel.TextSize = 12
+colorLabel.Font = Enum.Font.GothamBold
+colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+colorLabel.Parent = scrollFrame
+
+-- Color Buttons
+for i, color in ipairs(COLORS) do
+    local colorBtn = Instance.new("TextButton")
+    colorBtn.Name = "Color_" .. color.name
+    colorBtn.Size = UDim2.new(1, -20, 0, 35)
+    colorBtn.Position = UDim2.new(0, 10, 0, colorLabelY + 25 + (i-1) * 40)
+    colorBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    colorBtn.TextColor3 = color.rgb
+    colorBtn.Text = "● " .. color.name
+    colorBtn.TextSize = 12
+    colorBtn.Font = Enum.Font.Gotham
+    colorBtn.BorderSizePixel = 0
+    colorBtn.Parent = scrollFrame
     
-    colorButton.MouseButton1Click:Connect(function()
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = colorBtn
+    
+    colorBtn.MouseButton1Click:Connect(function()
         CONFIG.ESP_COLOR_INDEX = i
+        for j, otherBtn in pairs(scrollFrame:FindFirstChild("Color_" .. COLORS[j].name) and {scrollFrame:FindFirstChild("Color_" .. COLORS[j].name)} or {}) do
+            if otherBtn then
+                otherBtn.BackgroundColor3 = (j == i) and Color3.fromRGB(70, 70, 100) or Color3.fromRGB(50, 50, 60)
+            end
+        end
+        colorBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
     end)
 end
 
--- Output Section
-local outputLabel = Instance.new("TextLabel")
-outputLabel.Size = UDim2.new(1, 0, 0, 25)
-outputLabel.Position = UDim2.new(0, 0, 0, 290)
-outputLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-outputLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-outputLabel.Text = "Output"
-outputLabel.TextSize = 12
-outputLabel.Font = Enum.Font.GothamBold
-outputLabel.Parent = menuFrame
+-- Update CanvasSize
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, colorLabelY + 25 + (#COLORS * 40) + 20)
 
-local outputBox = Instance.new("TextLabel")
-outputBox.Size = UDim2.new(1, -10, 0, 185)
-outputBox.Position = UDim2.new(0, 5, 0, 320)
-outputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-outputBox.TextColor3 = Color3.fromRGB(100, 255, 100)
-outputBox.Text = "[00:00] ESP Ready\n[Injector] Synapse X или KRNL"
-outputBox.TextSize = 10
-outputBox.Font = Enum.Font.Courier
-outputBox.TextWrapped = true
-outputBox.TextXAlignment = Enum.TextXAlignment.Left
-outputBox.TextYAlignment = Enum.TextYAlignment.Top
-outputBox.Parent = menuFrame
-
--- Menu Toggle
+-- Menu Toggle Hotkey
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == CONFIG.MENU_KEY then
@@ -150,56 +161,71 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- ESP Rendering Loop
+-- ESP Rendering
 local espBoxes = {}
 
 RunService.RenderStepped:Connect(function()
     if not CONFIG.ESP_ENABLED then
         for _, box in pairs(espBoxes) do
-            box:Remove()
+            if box then pcall(function() box:Remove() end) end
         end
         espBoxes = {}
         return
     end
     
     local currentColor = COLORS[CONFIG.ESP_COLOR_INDEX].rgb
+    local players = Players:GetPlayers()
     
-    for _, player in pairs(Players:GetPlayers()) do
+    for _, player in pairs(players) do
         if player == Players.LocalPlayer then continue end
         
         local character = player.Character
         if not character then continue end
         
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if not humanoidRootPart then continue end
+        local humanoid = character:FindFirstChild("Humanoid")
+        local hrp = character:FindFirstChild("HumanoidRootPart")
         
-        local screenPos, onScreen = Camera:WorldToScreenPoint(humanoidRootPart.Position)
+        if not hrp or not humanoid or humanoid.Health <= 0 then continue end
+        
+        local screenPos, onScreen = Camera:WorldToScreenPoint(hrp.Position)
         
         if onScreen then
-            local boxName = "ESP_" .. player.UserId
-            local box = espBoxes[boxName]
+            local boxKey = "ESP_" .. player.UserId
+            local box = espBoxes[boxKey]
             
             if not box then
                 box = Drawing.new("Square")
                 box.Visible = true
                 box.Filled = false
                 box.Thickness = CONFIG.ESP_THICKNESS
-                espBoxes[boxName] = box
+                espBoxes[boxKey] = box
             end
             
+            local boxSize = math.max(30, 1000 / (Camera.CFrame.Position - hrp.Position).Magnitude)
+            
             box.Color = currentColor
-            box.Position = Vector2.new(screenPos.X - 25, screenPos.Y - 30)
-            box.Size = Vector2.new(50, 60)
+            box.Position = Vector2.new(screenPos.X - boxSize/2, screenPos.Y - boxSize/2)
+            box.Size = Vector2.new(boxSize, boxSize * 1.3)
         end
     end
     
-    for boxName, box in pairs(espBoxes) do
-        local userId = tonumber(boxName:match("(%d+)$"))
-        if not Players:FindFirstChild(tostring(userId)) then
-            box:Remove()
-            espBoxes[boxName] = nil
+    -- Cleanup dead/left players
+    for boxKey, box in pairs(espBoxes) do
+        local userId = tonumber(boxKey:match("(%d+)$"))
+        local playerExists = false
+        
+        for _, p in pairs(players) do
+            if p.UserId == userId then
+                playerExists = true
+                break
+            end
+        end
+        
+        if not playerExists then
+            pcall(function() box:Remove() end)
+            espBoxes[boxKey] = nil
         end
     end
 end)
 
-print("[ESP Cheat] Loaded. Press INSERT to toggle menu.")
+print("[Solara ESP] Loaded successfully. Press INSERT to toggle menu.")
